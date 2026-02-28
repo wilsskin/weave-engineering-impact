@@ -1,65 +1,111 @@
-import Image from "next/image";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { DEFAULT_REPO, TIME_WINDOW_DAYS, PILLAR_WEIGHTS } from "@/lib/config/appConfig";
+import { getWindow } from "@/lib/utils/timeWindow";
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+const PILLAR_LABELS: Record<string, string> = {
+  delivery: "Delivery Impact",
+  reliability: "Reliability & Crisis Response",
+  teamAcceleration: "Team Acceleration",
+  ownership: "Ownership & Depth",
+  executionQuality: "Execution Quality",
+};
 
 export default function Home() {
+  const window = getWindow();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="flex min-h-screen flex-col items-center bg-background px-4 py-12 sm:px-8">
+      <div className="w-full max-w-3xl space-y-8">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Engineering Impact Dashboard
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-muted-foreground">
+            Identifying the top 5 most impactful engineers using a transparent,
+            five-pillar scoring model over the last {TIME_WINDOW_DAYS} days of
+            GitHub activity.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {/* Repo & Window Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Repository</CardTitle>
+            <CardDescription>
+              Data source and analysis window
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground">
+                Repo
+              </span>
+              <Badge variant="secondary" className="font-mono text-sm">
+                {DEFAULT_REPO.owner}/{DEFAULT_REPO.repo}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground">
+                Window
+              </span>
+              <span className="text-sm">
+                {formatDate(window.start)} &mdash; {formatDate(window.end)}
+              </span>
+              <Badge variant="outline" className="text-xs">
+                {TIME_WINDOW_DAYS} days
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Scoring Model Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Scoring Model</CardTitle>
+            <CardDescription>
+              Five weighted pillars — no ML, no LOC counting, fully transparent
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {Object.entries(PILLAR_WEIGHTS).map(([key, weight]) => (
+                <li key={key} className="flex items-center justify-between">
+                  <span className="text-sm">
+                    {PILLAR_LABELS[key] ?? key}
+                  </span>
+                  <Badge variant="outline" className="tabular-nums">
+                    {(weight * 100).toFixed(0)}%
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Sprint 1 Notice */}
+        <Card className="border-dashed">
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            Data fetching and scoring begin in Sprint 1.
+            This shell confirms the project scaffold is running.
+          </CardContent>
+        </Card>
+      </div>
+    </main>
   );
 }
