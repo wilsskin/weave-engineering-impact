@@ -78,3 +78,26 @@ export interface NormalizedImpactInputs {
   reviews: ReviewLite[];
   issues: IssueLite[];
 }
+
+// ── Core area identification (Sprint 2) ────────────────────────
+
+export interface PrefixStats {
+  prefix: string;
+  prCount: number;
+  distinctAuthors: number;
+  bugPrCount: number;
+  bugShare: number;
+  coreScore: number;
+}
+
+export interface CoreAreaResult {
+  repo: RepoRef;
+  windowStart: string;
+  windowEnd: string;
+  /** Percentage threshold used for selection (0–100) */
+  topPercent: number;
+  /** Prefix strings selected as core areas */
+  corePrefixes: string[];
+  /** All prefix stats sorted by coreScore descending */
+  stats: PrefixStats[];
+}

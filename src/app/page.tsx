@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { DEFAULT_REPO, TIME_WINDOW_DAYS, PILLAR_WEIGHTS } from "@/lib/config/appConfig";
 import { getWindow } from "@/lib/utils/timeWindow";
 import { DataDebugPanel } from "@/components/dashboard/DataDebugPanel";
+import { CoreAreasDebugPanel } from "@/components/dashboard/CoreAreasDebugPanel";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -101,6 +102,9 @@ export default function Home() {
 
         {/* Sprint 1: Data Debug Panel */}
         <DataDebugPanel />
+
+        {/* Sprint 2: Core Areas Debug Panel */}
+        <CoreAreasDebugPanel />
       </div>
     </main>
   );
