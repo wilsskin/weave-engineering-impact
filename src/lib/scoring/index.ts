@@ -6,4 +6,9 @@
  *       + 0.15 * Ownership + 0.15 * ExecutionQuality
  */
 
-export {};
+export { scoreDeliveryImpact } from "./delivery";
+export { scoreReliabilityImpact } from "./reliability";
+export { scoreTeamAccelerationImpact } from "./teamAcceleration";
+export { scoreOwnershipImpact } from "./ownership";
+export { scoreExecutionQualityImpact } from "./executionQuality";
+export { aggregateImpactScores } from "./aggregate";

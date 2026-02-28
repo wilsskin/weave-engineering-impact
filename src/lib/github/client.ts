@@ -16,11 +16,23 @@ export type GithubRequestOptions = {
 
 class GithubRateLimitError extends Error {
   resetAt: string | null;
-  constructor(resetAt: string | null) {
+  remaining: number;
+  constructor(resetAt: string | null, remaining = 0) {
     const when = resetAt ? ` Resets at ${resetAt}.` : "";
     super(`GitHub API rate limit exceeded.${when} Use cached data or wait.`);
     this.name = "GithubRateLimitError";
     this.resetAt = resetAt;
+    this.remaining = remaining;
+  }
+}
+
+class GithubBadCredentialsError extends Error {
+  constructor() {
+    super(
+      "GitHub token is invalid or has been revoked. " +
+        "Generate a new token at https://github.com/settings/tokens and update GITHUB_TOKEN in .env.local"
+    );
+    this.name = "GithubBadCredentialsError";
   }
 }
 
@@ -34,7 +46,7 @@ class GithubPaginationLimitError extends Error {
   }
 }
 
-export { GithubRateLimitError, GithubPaginationLimitError };
+export { GithubRateLimitError, GithubBadCredentialsError, GithubPaginationLimitError };
 
 function buildHeaders(): Record<string, string> {
   return {
@@ -44,7 +56,11 @@ function buildHeaders(): Record<string, string> {
   };
 }
 
-function checkRateLimit(res: Response): void {
+function checkResponse(res: Response): void {
+  if (res.status === 401) {
+    throw new GithubBadCredentialsError();
+  }
+
   const remaining = res.headers.get("X-RateLimit-Remaining");
   if (res.status === 403 && remaining === "0") {
     const resetEpoch = res.headers.get("X-RateLimit-Reset");
@@ -53,6 +69,43 @@ function checkRateLimit(res: Response): void {
       : null;
     throw new GithubRateLimitError(resetAt);
   }
+}
+
+/**
+ * Returns the number of API calls remaining in the current rate-limit window,
+ * or null if the header isn't present.
+ */
+export function getRateLimitRemaining(headers: Headers): number | null {
+  const val = headers.get("X-RateLimit-Remaining");
+  if (val === null) return null;
+  const n = Number(val);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Validates the GitHub token by hitting the lightweight /rate_limit endpoint.
+ * Returns the remaining quota on success; throws on 401 or other failures.
+ */
+export async function validateToken(): Promise<{ remaining: number; limit: number }> {
+  const res = await fetch(`${GITHUB_BASE}/rate_limit`, {
+    headers: buildHeaders(),
+  });
+
+  if (res.status === 401) {
+    throw new GithubBadCredentialsError();
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`GitHub /rate_limit returned ${res.status}: ${body}`);
+  }
+
+  const data = await res.json();
+  const core = data?.resources?.core ?? data?.rate;
+  return {
+    remaining: core?.remaining ?? 0,
+    limit: core?.limit ?? 0,
+  };
 }
 
 /**
@@ -84,7 +137,7 @@ export async function githubGet<T>(
     signal: options?.signal,
   });
 
-  checkRateLimit(res);
+  checkResponse(res);
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
