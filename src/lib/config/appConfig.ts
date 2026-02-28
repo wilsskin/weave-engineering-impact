@@ -143,9 +143,10 @@ export type LabelCategory =
   | "chore"
   | "unknown";
 
-// ── Cache settings (placeholder for Sprint 1) ─────────────────
-export const CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
-export const CACHE_DIR = ".cache";
+// ── Cache settings ─────────────────────────────────────────────
+export const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
+export const CACHE_DIR = ".cache/impact-dashboard";
+export const CACHE_VERSION = "v1";
 
 // ── Aggregate config object ────────────────────────────────────
 export const appConfig = {
@@ -182,4 +183,5 @@ export const appConfig = {
   labelCategoryMap: LABEL_CATEGORY_MAP,
   cacheTtlMs: CACHE_TTL_MS,
   cacheDir: CACHE_DIR,
+  cacheVersion: CACHE_VERSION,
 } as const;

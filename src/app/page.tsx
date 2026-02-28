@@ -8,6 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_REPO, TIME_WINDOW_DAYS, PILLAR_WEIGHTS } from "@/lib/config/appConfig";
 import { getWindow } from "@/lib/utils/timeWindow";
+import { DataDebugPanel } from "@/components/dashboard/DataDebugPanel";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -98,13 +99,8 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Sprint 1 Notice */}
-        <Card className="border-dashed">
-          <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            Data fetching and scoring begin in Sprint 1.
-            This shell confirms the project scaffold is running.
-          </CardContent>
-        </Card>
+        {/* Sprint 1: Data Debug Panel */}
+        <DataDebugPanel />
       </div>
     </main>
   );
