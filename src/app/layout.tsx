@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Engineering Impact Dashboard",
+  title: "PostHog Engineering Impact",
   description:
-    "Top 5 most impactful engineers in the PostHog GitHub repository over the last 90 days.",
+    "Top 5 most impactful engineers at PostHog in the last 90 days.",
 };
 
 export default function RootLayout({

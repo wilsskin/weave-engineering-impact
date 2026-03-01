@@ -1,7 +1,10 @@
 "use client";
 
-import type { ImpactEngineerResult, PillarKey } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
+import type {
+  ImpactEngineerResult,
+  EngineerWhySummary,
+  PillarKey,
+} from "@/lib/types";
 
 const PILLAR_LABELS: Record<PillarKey, string> = {
   delivery: "Delivery",
@@ -11,14 +14,23 @@ const PILLAR_LABELS: Record<PillarKey, string> = {
   executionQuality: "Execution Quality",
 };
 
+const PILLAR_ORDER: PillarKey[] = [
+  "delivery",
+  "reliability",
+  "teamAcceleration",
+  "ownership",
+  "executionQuality",
+];
+
 interface EngineerDetailProps {
   engineer: ImpactEngineerResult;
+  whySummary?: EngineerWhySummary | null;
 }
 
-export function EngineerDetail({ engineer }: EngineerDetailProps) {
+export function EngineerDetail({ engineer, whySummary }: EngineerDetailProps) {
   return (
-    <div className="grid gap-6 sm:grid-cols-[1fr_1.4fr]">
-      {/* Left: identity + headline */}
+    <div className="space-y-5">
+      {/* Row 1: identity + score */}
       <div className="space-y-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -31,50 +43,38 @@ export function EngineerDetail({ engineer }: EngineerDetailProps) {
         <p className="text-3xl font-bold tabular-nums tracking-tight">
           {engineer.finalScore.toFixed(2)}
         </p>
-        <div className="flex flex-wrap gap-1.5">
-          {engineer.notes.topPillars.map((p) => (
-            <Badge key={p} variant="secondary" className="text-xs">
-              {PILLAR_LABELS[p]}
-            </Badge>
-          ))}
-        </div>
       </div>
 
-      {/* Right: pillar grid */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-5 gap-2">
-          {engineer.pillars.map((p) => (
-            <div
-              key={p.pillar}
-              className="rounded-lg border border-border/60 px-2.5 py-2 text-center"
-            >
-              <p className="text-[10px] font-medium text-muted-foreground leading-tight mb-1">
-                {PILLAR_LABELS[p.pillar]}
-              </p>
-              <p className="text-base font-semibold tabular-nums">
-                {Math.round(p.normalizedScore)}
-              </p>
-              <p className="text-[10px] text-muted-foreground tabular-nums">
-                {(p.weight * 100).toFixed(0)}% &rarr; {p.weightedContribution.toFixed(2)}
-              </p>
+      {/* Row 2: five pillar cards (2 per row) with stats under each */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {PILLAR_ORDER.map((pillarKey) => {
+          const pillar = engineer.pillars.find((p) => p.pillar === pillarKey);
+          const reasons = whySummary?.reasons[pillarKey] ?? [];
+          return (
+            <div key={pillarKey} className="space-y-2">
+              <div className="rounded-lg border border-border/60 px-2.5 py-2 text-center">
+                <p className="text-[10px] font-medium text-muted-foreground leading-tight mb-1">
+                  {PILLAR_LABELS[pillarKey]}
+                </p>
+                <p className="text-base font-semibold tabular-nums">
+                  {pillar ? Math.round(pillar.normalizedScore) : "—"}
+                </p>
+              </div>
+              {reasons.length > 0 && (
+                <ul className="space-y-0.5">
+                  {reasons.map((b, i) => (
+                    <li
+                      key={i}
+                      className="text-[11px] text-muted-foreground leading-snug"
+                    >
+                      • {b}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          ))}
-        </div>
-
-        {/* Explanation math */}
-        <div>
-          <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-            How this score was calculated
-          </p>
-          <ul className="space-y-0.5 font-mono text-xs text-muted-foreground">
-            {engineer.notes.explanation.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-            <li className="mt-1 font-semibold text-foreground">
-              Final Impact Score = {engineer.finalScore.toFixed(2)}
-            </li>
-          </ul>
-        </div>
+          );
+        })}
       </div>
     </div>
   );

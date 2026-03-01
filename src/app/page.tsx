@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TopFiveTable } from "@/components/dashboard/TopFiveTable";
 import { EngineerDetail } from "@/components/dashboard/EngineerDetail";
-import { TransparencyPanel } from "@/components/dashboard/TransparencyPanel";
+import { HowItWorks } from "@/components/dashboard/HowItWorks";
 import { DataStatus, isRefreshBlocked } from "@/components/dashboard/DataStatus";
 import type { ImpactEngineerResult, ImpactRankingResult } from "@/lib/types";
 import { RefreshCw, AlertTriangle } from "lucide-react";
@@ -109,11 +109,10 @@ export default function Home() {
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Engineering Impact — Last 90 Days
+              PostHog Engineering Impact
             </h1>
             <p className="text-sm text-muted-foreground">
-              Top 5 most impactful engineers based on transparent GitHub
-              metadata scoring
+              Top 5 most impactful engineers at PostHog in the last 30 days
             </p>
           </div>
           <Button
@@ -204,36 +203,37 @@ export default function Home() {
             {/* Data status bar */}
             <DataStatus meta={data.meta} />
 
-            {/* Top 5 table */}
+            {/* Table (left) + Engineer detail (right) — single card */}
             <Card>
-              <CardHeader className="pb-0">
-                <CardTitle className="text-base">Top 5 Engineers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TopFiveTable
-                  engineers={data.impact.top5}
-                  selectedLogin={selectedLogin}
-                  onSelect={setSelectedLogin}
-                />
-              </CardContent>
+              <div className="grid sm:grid-cols-[minmax(0,1fr)_1.4fr]">
+                {/* Left: Top 5 table */}
+                <div className="px-6 pb-6 border-b border-border/60 sm:border-b-0 sm:border-r sm:border-border/60 sm:pr-6">
+                  <h3 className="font-semibold text-base pb-2">Top 5 Engineers</h3>
+                  <TopFiveTable
+                    engineers={data.impact.top5}
+                    selectedLogin={selectedLogin}
+                    onSelect={setSelectedLogin}
+                  />
+                </div>
+
+                {/* Right: Selected engineer detail + transparency */}
+                {selectedEngineer && (
+                  <div className="space-y-5 px-6 py-6">
+                    <EngineerDetail
+                      engineer={selectedEngineer}
+                      whySummary={
+                        data.impact.transparency?.whyByEngineer.find(
+                          (w) => w.engineerLogin === selectedLogin
+                        ) ?? null
+                      }
+                    />
+                  </div>
+                )}
+              </div>
             </Card>
 
-            {/* Selected engineer detail + transparency */}
-            {selectedEngineer && (
-              <Card>
-                <CardContent className="space-y-5 pt-6">
-                  <EngineerDetail engineer={selectedEngineer} />
-                  {data.impact.transparency && (
-                    <div className="border-t border-border/60 pt-4">
-                      <TransparencyPanel
-                        transparency={data.impact.transparency}
-                        selectedLogin={selectedLogin}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            {/* How it works */}
+            <HowItWorks />
 
             {/* Footer meta */}
             <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">

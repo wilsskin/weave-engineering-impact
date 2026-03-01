@@ -1,17 +1,6 @@
 "use client";
 
-import type {
-  ImpactTransparencyBundle,
-  EngineerWhySummary,
-  PillarKey,
-} from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import type { ImpactTransparencyBundle, PillarKey } from "@/lib/types";
 
 const PILLAR_LABELS: Record<PillarKey, string> = {
   delivery: "Delivery",
@@ -20,6 +9,13 @@ const PILLAR_LABELS: Record<PillarKey, string> = {
   ownership: "Ownership",
   executionQuality: "Execution Quality",
 };
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface TransparencyPanelProps {
   transparency: ImpactTransparencyBundle;
@@ -30,15 +26,8 @@ export function TransparencyPanel({
   transparency,
   selectedLogin,
 }: TransparencyPanelProps) {
-  const whyData = transparency.whyByEngineer.find(
-    (w) => w.engineerLogin === selectedLogin
-  );
-
   return (
     <div className="space-y-4">
-      {/* Why section */}
-      {whyData && <WhySection why={whyData} />}
-
       <Accordion type="multiple" className="w-full">
         {/* Model parameters (collapsed by default) */}
         <AccordionItem value="parameters" className="border-border/60">
@@ -89,52 +78,6 @@ export function TransparencyPanel({
           No validation warnings
         </p>
       )}
-    </div>
-  );
-}
-
-function WhySection({ why }: { why: EngineerWhySummary }) {
-  const pillars: PillarKey[] = [
-    "delivery",
-    "reliability",
-    "teamAcceleration",
-    "ownership",
-    "executionQuality",
-  ];
-
-  const hasAny = pillars.some(
-    (p) => why.reasons[p] && why.reasons[p]!.length > 0
-  );
-  if (!hasAny) return null;
-
-  return (
-    <div>
-      <p className="mb-2 text-xs font-medium text-muted-foreground">
-        Why {why.engineerLogin} ranked here
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {pillars.map((p) => {
-          const bullets = why.reasons[p];
-          if (!bullets || bullets.length === 0) return null;
-          return (
-            <div key={p}>
-              <p className="text-[11px] font-medium mb-0.5">
-                {PILLAR_LABELS[p]}
-              </p>
-              <ul className="space-y-0.5">
-                {bullets.map((b, i) => (
-                  <li
-                    key={i}
-                    className="text-[11px] text-muted-foreground leading-snug"
-                  >
-                    &bull; {b}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
