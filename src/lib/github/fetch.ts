@@ -77,7 +77,22 @@ export async function fetchImpactInputs(
   // Non-refresh: return fresh cache if available and complete
   if (!refresh) {
     const fresh = await readCache<NormalizedImpactInputs>(cacheKey);
-    if (fresh) return fresh;
+    if (fresh) {
+      const progress = fresh.value.fetchProgress;
+      const meta = progress
+        ? {
+            ...fresh.meta,
+            enrichmentProgress: {
+              enrichedPrs: progress.enrichedPrNumbers.length,
+              totalPrs: progress.totalPrsInWindow,
+              isComplete:
+                progress.enrichedPrNumbers.length >= progress.totalPrsInWindow &&
+                progress.issuesFetched,
+            },
+          }
+        : fresh.meta;
+      return { meta, value: fresh.value };
+    }
   }
 
   // Refresh with cooldown — but skip cooldown if data is incomplete
@@ -89,11 +104,22 @@ export async function fetchImpactInputs(
     const ageSeconds =
       (Date.now() - new Date(existing.meta.cachedAt).getTime()) / 1000;
     if (ageSeconds < REFRESH_COOLDOWN_SECONDS) {
+      const progress = existing.value.fetchProgress;
+      const enrichmentMeta = progress
+        ? {
+            enrichedPrs: progress.enrichedPrNumbers.length,
+            totalPrs: progress.totalPrsInWindow,
+            isComplete:
+              progress.enrichedPrNumbers.length >= progress.totalPrsInWindow &&
+              progress.issuesFetched,
+          }
+        : undefined;
       return {
         meta: {
           ...existing.meta,
           isStale: true,
           staleReason: "cooldown",
+          ...(enrichmentMeta && { enrichmentProgress: enrichmentMeta }),
         },
         value: existing.value,
       };
@@ -111,11 +137,22 @@ export async function fetchImpactInputs(
       const err = new GithubRateLimitError(null, budget.remaining);
       // If we have partial data, return it with a rate-limit note
       if (existing) {
+        const progress = existing.value.fetchProgress;
+        const enrichmentMeta = progress
+          ? {
+              enrichedPrs: progress.enrichedPrNumbers.length,
+              totalPrs: progress.totalPrsInWindow,
+              isComplete:
+                progress.enrichedPrNumbers.length >= progress.totalPrsInWindow &&
+                progress.issuesFetched,
+            }
+          : undefined;
         return {
           meta: {
             ...existing.meta,
             isStale: true,
             staleReason: "rateLimit",
+            ...(enrichmentMeta && { enrichmentProgress: enrichmentMeta }),
           },
           value: existing.value,
         };
@@ -152,8 +189,23 @@ export async function fetchImpactInputs(
     if (err instanceof GithubBadCredentialsError) {
       console.error("[fetch] Bad credentials:", err.message);
       if (existing) {
+        const p = existing.value.fetchProgress;
+        const enrichmentMeta = p
+          ? {
+              enrichedPrs: p.enrichedPrNumbers.length,
+              totalPrs: p.totalPrsInWindow,
+              isComplete:
+                p.enrichedPrNumbers.length >= p.totalPrsInWindow &&
+                p.issuesFetched,
+            }
+          : undefined;
         return {
-          meta: { ...existing.meta, isStale: true, staleReason: "errorFallback" },
+          meta: {
+            ...existing.meta,
+            isStale: true,
+            staleReason: "errorFallback",
+            ...(enrichmentMeta && { enrichmentProgress: enrichmentMeta }),
+          },
           value: existing.value,
         };
       }
@@ -167,12 +219,23 @@ export async function fetchImpactInputs(
         err.message
       );
       if (existing) {
+        const p = existing.value.fetchProgress;
+        const enrichmentMeta = p
+          ? {
+              enrichedPrs: p.enrichedPrNumbers.length,
+              totalPrs: p.totalPrsInWindow,
+              isComplete:
+                p.enrichedPrNumbers.length >= p.totalPrsInWindow &&
+                p.issuesFetched,
+            }
+          : undefined;
         return {
           meta: {
             ...existing.meta,
             isStale: true,
             staleReason: "rateLimit",
             rateLimitResetAt: err.resetAt ?? undefined,
+            ...(enrichmentMeta && { enrichmentProgress: enrichmentMeta }),
           },
           value: existing.value,
         };
@@ -186,8 +249,23 @@ export async function fetchImpactInputs(
         "[fetch] Fetch failed, serving stale cache:",
         err instanceof Error ? err.message : err
       );
+      const p = existing.value.fetchProgress;
+      const enrichmentMeta = p
+        ? {
+            enrichedPrs: p.enrichedPrNumbers.length,
+            totalPrs: p.totalPrsInWindow,
+            isComplete:
+              p.enrichedPrNumbers.length >= p.totalPrsInWindow &&
+              p.issuesFetched,
+          }
+        : undefined;
       return {
-        meta: { ...existing.meta, isStale: true, staleReason: "errorFallback" },
+        meta: {
+          ...existing.meta,
+          isStale: true,
+          staleReason: "errorFallback",
+          ...(enrichmentMeta && { enrichmentProgress: enrichmentMeta }),
+        },
         value: existing.value,
       };
     }

@@ -112,7 +112,7 @@ export default function Home() {
               PostHog Engineering Impact
             </h1>
             <p className="text-sm text-muted-foreground">
-              Top 5 most impactful engineers at PostHog in the last 30 days
+              Top 5 most impactful engineers at PostHog in the last 90 days
             </p>
           </div>
           <Button

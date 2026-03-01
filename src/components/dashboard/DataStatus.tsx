@@ -21,16 +21,6 @@ interface DataStatusProps {
   meta: DataStatusMeta;
 }
 
-function formatRelative(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.round(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
-}
-
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -50,30 +40,36 @@ export function DataStatus({ meta }: DataStatusProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-      <span className="flex items-center gap-1">
-        <Clock className="size-3" />
-        Data from {formatRelative(meta.cachedAt)}
-      </span>
+      {progress ? (
+        <span className="flex items-center gap-1">
+          <Clock className="size-3" />
+          {progress.enrichedPrs} of {progress.totalPrs} PRs cached
+        </span>
+      ) : (
+        <span className="flex items-center gap-1">
+          <Clock className="size-3" />
+          Cached data
+        </span>
+      )}
 
-      {progress && (
-        progress.isComplete ? (
-          <Badge
-            variant="outline"
-            className="gap-1 border-green-500/40 text-green-600 text-[10px]"
-          >
-            <CheckCircle2 className="size-3" />
-            Complete — {progress.totalPrs} PRs loaded
-          </Badge>
-        ) : (
-          <Badge
-            variant="outline"
-            className="gap-1 border-blue-500/40 text-blue-600 text-[10px]"
-          >
-            <Info className="size-3" />
-            {progress.enrichedPrs}/{progress.totalPrs} PRs loaded — click
-            Refresh for more
-          </Badge>
-        )
+      {progress && progress.isComplete && (
+        <Badge
+          variant="outline"
+          className="gap-1 border-green-500/40 text-green-600 text-[10px]"
+        >
+          <CheckCircle2 className="size-3" />
+          Complete
+        </Badge>
+      )}
+
+      {progress && !progress.isComplete && (
+        <Badge
+          variant="outline"
+          className="gap-1 border-blue-500/40 text-blue-600 text-[10px]"
+        >
+          <Info className="size-3" />
+          Click Refresh to fetch more
+        </Badge>
       )}
 
       {meta.isStale && reason && (
