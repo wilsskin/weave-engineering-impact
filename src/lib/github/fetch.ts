@@ -489,14 +489,25 @@ async function fetchPRReviews(
   }
 }
 
+const ISSUES_MAX_PAGES = 20;
+
 async function fetchIssues(
   owner: string,
   repo: string,
   windowStart: string
 ): Promise<IssueLite[]> {
-  const raw = await githubGetAllPages<any>(
-    `/repos/${owner}/${repo}/issues?state=all&since=${windowStart}&per_page=100`
-  );
+  const basePath = `/repos/${owner}/${repo}/issues?state=all&since=${windowStart}&per_page=100`;
+  const raw: any[] = [];
+
+  for (let page = 1; page <= ISSUES_MAX_PAGES; page++) {
+    const path = page === 1 ? basePath : `${basePath}&page=${page}`;
+    const { data, headers } = await githubGet<any[]>(path);
+    if (data.length === 0) break;
+    raw.push(...data);
+    if (data.length < 100) break;
+    const linkHeader = headers.get("Link");
+    if (!linkHeader?.includes('rel="next"')) break;
+  }
 
   const issues: IssueLite[] = [];
   for (const item of raw) {

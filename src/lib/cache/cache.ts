@@ -1,11 +1,11 @@
 /**
  * Cache abstraction with pluggable backends.
  *
- * - Local dev: DiskCacheBackend (writes to .cache/ on disk)
- * - Production (Vercel): KvCacheBackend (writes to Vercel KV / Upstash Redis)
+ * - Disk (default): CACHE_DIR (data/impact-dashboard-cache) — committed to git
+ *   so the deployed app can serve cached data. Writes are best-effort (e.g. read-only on Vercel).
+ * - Production + KV: KvCacheBackend when KV_REST_API_* env are set (Vercel KV / Upstash Redis).
  *
- * Both backends share the same CacheMeta contract. The active backend
- * is selected automatically via getCacheBackend().
+ * The active backend is selected automatically via getCacheBackend().
  */
 
 import fs from "node:fs/promises";
@@ -79,7 +79,6 @@ class DiskCacheBackend implements CacheBackend {
   }
 
   async set<T>(key: string, value: T): Promise<{ meta: CacheMeta }> {
-    await ensureCacheDir();
     const meta: CacheMeta = { cachedAt: new Date().toISOString() };
     const envelope: CacheEnvelope<T> = { meta, payload: value };
     const json = JSON.stringify(envelope, null, 2);
@@ -90,12 +89,23 @@ class DiskCacheBackend implements CacheBackend {
       `cache-${Date.now()}-${Math.random().toString(36).slice(2)}.json`
     );
 
-    await fs.writeFile(tmpPath, json, "utf-8");
-    await ensureCacheDir();
-    await fs.rename(tmpPath, filePath).catch(async () => {
-      await fs.copyFile(tmpPath, filePath);
+    try {
+      await fs.writeFile(tmpPath, json, "utf-8");
+      await ensureCacheDir();
+      await fs.rename(tmpPath, filePath).catch(async () => {
+        await fs.copyFile(tmpPath, filePath);
+        await fs.unlink(tmpPath).catch(() => {});
+      });
+    } catch (err) {
+      const code = err && typeof err === "object" && "code" in err ? (err as NodeJS.ErrnoException).code : null;
+      if (code === "EACCES" || code === "EROFS") {
+        console.warn("[cache] Cannot write to cache dir (read-only?). Serving without persisting.");
+      } else {
+        throw err;
+      }
+    } finally {
       await fs.unlink(tmpPath).catch(() => {});
-    });
+    }
 
     return { meta };
   }
@@ -161,7 +171,7 @@ export function getCacheBackend(): CacheBackend {
     console.log("[cache] Using KV backend (production)");
     _backend = new KvCacheBackend();
   } else {
-    console.log("[cache] Using disk backend (local)");
+    console.log("[cache] Using disk backend (committed cache)");
     _backend = new DiskCacheBackend();
   }
   return _backend;

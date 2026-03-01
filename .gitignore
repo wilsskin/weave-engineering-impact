@@ -34,7 +34,7 @@ yarn-error.log*
 .env*
 !.env.example
 
-# local data cache
+# legacy local cache (app now uses data/impact-dashboard-cache, which is committed)
 /.cache
 
 # vercel

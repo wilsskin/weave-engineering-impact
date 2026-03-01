@@ -230,7 +230,8 @@ export type LabelCategory =
 
 // ── Cache settings ─────────────────────────────────────────────
 export const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
-export const CACHE_DIR = ".cache/impact-dashboard";
+/** Committed to git so deployed app (e.g. Vercel) can serve cached data. */
+export const CACHE_DIR = "data/impact-dashboard-cache";
 export const CACHE_VERSION = "v1";
 
 // ── Refresh cooldown ───────────────────────────────────────────
